@@ -35,11 +35,137 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-slate-50 p-4 md:p-6">
-  <!-- Estado global simulado -->
+<body class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+  <!-- Tela de Login -->
+  <div id="login-screen" class="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 mx-auto rounded-lg bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-xl">FG</div>
+      <h1 class="mt-4 text-2xl font-bold text-slate-800">Sistema de Conferência Final</h1>
+      <p class="text-slate-500 mt-2">Faça login ou cadastre-se</p>
+    </div>
+
+    <!-- Formulário de Login -->
+    <div id="login-form">
+      <div class="space-y-4">
+        <input type="text" id="login-username" placeholder="Usuário" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="password" id="login-password" placeholder="Senha" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="doLogin()" class="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition">
+          Entrar
+        </button>
+        <p class="text-center text-sm text-slate-600">
+          Não tem conta? <button onclick="showRegister()" class="text-indigo-600 font-medium">Cadastre-se</button>
+        </p>
+      </div>
+      <div id="login-error" class="mt-3 text-center text-sm text-rose-600 hidden"></div>
+    </div>
+
+    <!-- Formulário de Cadastro -->
+    <div id="register-form" class="hidden space-y-4">
+      <input type="text" id="reg-username" placeholder="Escolha um usuário" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <input type="password" id="reg-password" placeholder="Escolha uma senha" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div class="flex gap-2">
+        <button onclick="doRegister('user')" class="flex-1 py-2 px-4 bg-indigo-600 text-white rounded-lg text-sm">Usuário Comum</button>
+        <button onclick="doRegister('admin')" class="flex-1 py-2 px-4 bg-slate-800 text-white rounded-lg text-sm">Administrador</button>
+      </div>
+      <p class="text-center text-sm text-slate-600">
+        Já tem conta? <button onclick="showLogin()" class="text-indigo-600 font-medium">Faça login</button>
+      </p>
+      <div id="register-error" class="text-center text-sm text-rose-600 hidden"></div>
+    </div>
+
+    <p class="text-center text-xs text-slate-400 mt-8">
+      Protótipo – dados salvos localmente.
+    </p>
+  </div>
+
+  <!-- App principal (inicialmente escondido) -->
+  <div id="app" class="hidden min-h-screen bg-slate-50 p-4 md:p-6"></div>
+
   <script>
-    // Simular usuário e dados
-    let currentUser = { name: "Gabrielly Souza", id: "OP007", role: "user" }; // ou "admin"
+    // Inicializa o armazenamento de usuários se não existir
+    if (!localStorage.getItem('users')) {
+      localStorage.setItem('users', JSON.stringify({}));
+    }
+
+    function showRegister() {
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('register-form').classList.remove('hidden');
+      document.getElementById('register-error').classList.add('hidden');
+    }
+
+    function showLogin() {
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('login-error').classList.add('hidden');
+    }
+
+    function doRegister(role) {
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      const errorEl = document.getElementById('register-error');
+      errorEl.classList.add('hidden');
+
+      if (!username || !password) {
+        errorEl.textContent = "Preencha usuário e senha.";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('users'));
+      if (users[username]) {
+        errorEl.textContent = "Usuário já existe.";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      users[username] = {
+        password: password,
+        role: role,
+        name: username
+      };
+      localStorage.setItem('users', JSON.stringify(users));
+
+      showLogin();
+      document.getElementById('login-username').value = username;
+      document.getElementById('login-password').value = password;
+    }
+
+    function doLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.add('hidden');
+
+      if (!username || !password) {
+        errorEl.textContent = "Preencha usuário e senha.";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('users'));
+      const user = users[username];
+
+      if (!user || user.password !== password) {
+        errorEl.textContent = "Usuário ou senha inválidos.";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      window.currentUser = {
+        name: user.name,
+        id: user.role === 'admin' ? `ADM_${username}` : `OP_${username}`,
+        role: user.role
+      };
+
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      render();
+    }
+
+    // ========== SEU CÓDIGO EXISTENTE (SEM toggleRole) ==========
+
     let lotes = [
       { id: "L001", produto: "Camisa Polo", quantidade: 120, data: "2025-10-05", status: "Pendente" },
       { id: "L002", produto: "Calça Jeans", quantidade: 80, data: "2025-10-06", status: "Em Conferência" },
@@ -60,10 +186,7 @@
 
     const DEFAULT_CHECKLIST = checklist.map(c => ({ ...c }));
 
-    function toggleRole() {
-      currentUser.role = currentUser.role === "user" ? "admin" : "user";
-      render();
-    }
+    // REMOVIDA: function toggleRole()
 
     function openConferir(lote) {
       selectedLote = lote;
@@ -119,7 +242,6 @@
 
       conferencias.unshift(novaConferencia);
 
-      // Atualiza status do lote
       lotes = lotes.map(l => 
         l.id === selectedLote.id 
           ? { ...l, status: aprovada ? "Conferida" : "Reprovada" } 
@@ -164,7 +286,6 @@
       return { total, aprovadas, reprovadas, avgTimeSec };
     }
 
-    // Filtros
     let filters = { q: "", status: "Todos", date: "" };
 
     function updateFilter(key, value) {
@@ -172,7 +293,6 @@
       render();
     }
 
-    // Renderização manual (simples)
     function render() {
       document.getElementById('app').innerHTML = App();
     }
@@ -197,10 +317,8 @@
               <div class="font-medium">${currentUser.name} <span class="text-xs text-slate-400">(${currentUser.id})</span></div>
               <div class="text-xs text-slate-500 mt-1">${currentUser.role === 'admin' ? 'Administrador' : 'Usuário Comum'}</div>
             </div>
-            <button onclick="toggleRole()" class="px-3 py-2 bg-white border rounded-md shadow-sm text-sm">
-              ${currentUser.role === 'admin' ? 'Modo Usuário' : 'Modo Admin'}
-            </button>
-            <button class="px-3 py-2 bg-white border rounded-md shadow-sm text-sm">Sair</button>
+            <!-- BOTÃO DE TROCA DE MODO REMOVIDO -->
+            <button onclick="logout()" class="px-3 py-2 bg-white border rounded-md shadow-sm text-sm">Sair</button>
           </div>
         </header>
 
@@ -389,11 +507,11 @@
       `;
     }
 
-    // Inicializa
-    window.onload = () => {
-      document.body.innerHTML = `<div id="app"></div>`;
-      render();
-    };
+    function logout() {
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      showLogin();
+    }
   </script>
 </body>
 </html>
